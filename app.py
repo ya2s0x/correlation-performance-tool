@@ -219,7 +219,11 @@ def analyze_all_portfolios(prices, portfolio_allocations):
 
     # 👉 Affichage brut sans style
     st.markdown("### Comparaison de portefeuilles")
-    st.dataframe(df_metrics_display, use_container_width=True)
+    st.dataframe(
+    df_metrics_display.style.format(precision=2),
+    use_container_width=False,  # <-- Permet de réduire la largeur
+    height=320
+    )
 
     return df_metrics_display
     
