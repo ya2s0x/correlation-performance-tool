@@ -10,13 +10,13 @@ from datetime import timedelta
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-# 🎨 Charte graphique
+# Charte graphique
 primary_color = "#4E26DF"
 secondary_color = "#7CEF17"
 heatmap_colors = ["#B8A8F2", "#C1E5F5", "#C3F793"]
 performance_colors = ["#4E26DF", "#7CEF17", "#35434B", "#B8A8F2", "#C1E5F5", "#C3F793", "#F2CFEE","#F2F2F2","#FCD9C4", "#A7C7E7", "#D4C2FC", "#F9F6B2", "#C4FCD2"]
 
-# 📌 Mapping des actifs
+# Mapping des actifs
 asset_mapping = {
     "MSCI World": "URTH",
     "Nasdaq": "^IXIC",
@@ -27,7 +27,7 @@ asset_mapping = {
     "iShares Bonds Agregate":"AGGG.L"
 }
 
-# Début configuration des portefeuilles
+#Config de base pour les portefeuilles
 portfolio_allocations = {
     "Portfolio 1": {
         "^GSPC": 0.60,
@@ -95,11 +95,11 @@ full_asset_mapping = {**asset_mapping, **crypto_mapping, **us_equity_mapping}
 asset_names_map = {v: k for k, v in full_asset_mapping.items()}
 
 
-# 🖥️ Interface
+# Interface
 st.set_page_config(page_title="Alphacap", layout="wide")
 st.title("Comparaison de performances d'actifs")
 
-# Interface dynamique de portefeuille crypto
+#Interface dynamique pour la poche crypto
 st.markdown("## 💼 Composition du portefeuille crypto")
 
 crypto_allocation = []
@@ -139,7 +139,7 @@ else:
 
     portfolio_allocations["Portfolio 3"] = portfolio3
 
-    # 🔢 Fonction de calcul des métriques sur un portefeuille donné
+    # Fonction de calcul des métriques sur un portefeuille donné
 
 def compute_portfolio_metrics(prices, allocations, reference_returns=None):
     weights = np.array([allocations[ticker] for ticker in allocations if ticker in prices.columns])
@@ -180,7 +180,7 @@ def compute_portfolio_metrics(prices, allocations, reference_returns=None):
 
     }
 
-# 🔢 Exécution pour les 3 portefeuilles
+# Exécution - 3 portefeuilles
 def analyze_all_portfolios(prices, portfolio_allocations):
     port_metrics = {}
     ref_returns = None
@@ -202,22 +202,18 @@ def analyze_all_portfolios(prices, portfolio_allocations):
             returns = prices[tickers].pct_change().dropna()
             ref_returns = (returns * weights).sum(axis=1)
 
-    # ➕ Création & transposition du DataFrame
     df_metrics = pd.DataFrame(port_metrics).T
     numeric_cols = ["Annualized Return", "Cumulative Return", "Volatility", "Sharpe Ratio", "Max Drawdown", "Correlation with Portfolio 1"]
-
-        # ✅ Convertir uniquement les colonnes numériques
+    
     for col in numeric_cols:
          if col in df_metrics.columns:
             df_metrics[col] = pd.to_numeric(df_metrics[col], errors="coerce")
 
-    # ➕ Transposer et arrondir les valeurs numériques à 2 décimales
+    # Transposer et arrondir les valeurs numériques à 2 décimales
     df_metrics_display = df_metrics.T
     df_metrics_display = df_metrics_display.applymap(
         lambda x: round(x, 2) if isinstance(x, (int, float)) else x
     )
-
-    # 👉 Affichage brut sans style
     st.markdown("### Comparaison de portefeuilles")
     st.dataframe(
     df_metrics_display.style.format(precision=2),
@@ -227,19 +223,19 @@ def analyze_all_portfolios(prices, portfolio_allocations):
 
     return df_metrics_display
     
-# Sélection utilisateur
+# User selection
 available_assets = list(full_asset_mapping.keys())
 selected_asset = st.selectbox("📌 Sélectionnez un actif :", available_assets)
 asset_ticker = full_asset_mapping[selected_asset]
 
-# Périodes disponibles
+# Périodes
 timeframes = {
     "1 semaine": "7d", "1 mois": "30d", "3 mois": "90d", "6 mois": "180d",
     "1 an": "365d","2 ans" : "730d","3 ans": "1095d", "5 ans": "1825d"
 }
 period_label = st.selectbox("⏳ Période :", list(timeframes.keys()))
 
-# 🎯 Période personnalisée (optionnelle)
+#Période personnalisée
 use_custom_period = st.checkbox("Période personnalisée")
 custom_col1, custom_col2 = st.columns(2)
 with custom_col1:
@@ -247,7 +243,7 @@ with custom_col1:
 with custom_col2:
     custom_end = st.date_input("Date de fin", value=pd.Timestamp.today() - pd.Timedelta(days=1), disabled=not use_custom_period)
 
-# Actifs de comparaison (réorganisés par thème)
+# Actifs de comparaison
 st.markdown("**Liste des actifs à comparer**")
 
 compare_assets = [a for a in available_assets if a != selected_asset]
@@ -262,7 +258,7 @@ selected_comparisons = st.multiselect(
 )
 compare_tickers = [full_asset_mapping[a] for a in selected_comparisons]
 
-# ▶️ Bouton d’analyse
+# Bouton d’analyse
 if st.button("🔎 Analyser"):
     try:
         tickers_graphiques = list(set(compare_tickers + [asset_ticker]))
@@ -272,7 +268,7 @@ if st.button("🔎 Analyser"):
             tickers_portefeuilles.update(alloc.keys())
         tickers_dl = list(set(tickers_graphiques + list(tickers_portefeuilles)))
 
-        # 📅 Détermination période finale : soit personnalisée soit prédéfinie
+        # Détermination période finale
         if use_custom_period:
             start_date = pd.to_datetime(custom_start)
             end_date = pd.to_datetime(custom_end)
@@ -297,8 +293,7 @@ if st.button("🔎 Analyser"):
         df = df.dropna(how="all")
         # Remplissage uniquement pour les actifs traditionnels
         df[traditional_tickers] = df[traditional_tickers].ffill().bfill()
-
-        # Remplacement du label de période
+        
         if not use_custom_period:
             label_period = f"sur {period_label.lower()}"
         else:
@@ -312,7 +307,6 @@ if st.button("🔎 Analyser"):
         asset_names = {v: k for k, v in full_asset_mapping.items()}
         correlation_matrix.rename(index=asset_names, columns=asset_names, inplace=True)
         
-
         fig_width = max(4, len(correlation_matrix.columns) * 0.3)
         fig, ax = plt.subplots(figsize=(fig_width, fig_width))
         custom_cmap = LinearSegmentedColormap.from_list(
@@ -344,7 +338,7 @@ if st.button("🔎 Analyser"):
         fig.tight_layout(pad=2.0)
         st.pyplot(fig)
 
-        # Graphique de performances
+        # Graph de performances
         df = df[df.columns[df.notna().any()]].ffill().bfill()
         df_graph = df_graph.ffill().bfill()
         performance = df_graph.iloc[-1] / df_graph.iloc[0] - 1
@@ -374,7 +368,8 @@ if st.button("🔎 Analyser"):
         fig_perf.tight_layout(pad=2.0)
         st.pyplot(fig_perf)
 
-        # 📈 Graphique des prix normalisés
+        # Graphique des prix normalisés - Base 100
+        
         df_graph = df_graph.ffill().bfill()
         df_normalized = df_graph / df_graph.iloc[0] * 100
         fig_price, ax_price = plt.subplots(figsize=(6, 4))
@@ -391,7 +386,7 @@ if st.button("🔎 Analyser"):
         fig_price.tight_layout(pad=2.0)
         st.pyplot(fig_price)
 
-        # 🔁 Calcul de la volatilité annualisée
+        # Volatilité annualisée
         vol = df_graph.pct_change().std() * (252 ** 0.5) * 100
         vol_df = vol.sort_values(ascending=False).reset_index()
         vol_df.columns = ["Actif", "Volatilité (%)"]
@@ -411,17 +406,17 @@ if st.button("🔎 Analyser"):
         fig_vol.tight_layout(pad=2.0)
         st.pyplot(fig_vol)
 
-        # Analyse des portefeuilles
+        # Run analyse des portefeuilles
         
         if "Portfolio 3" not in portfolio_allocations and total_pct == 100 and crypto_global_pct > 0:
             portfolio_allocations["Portfolio 3"] = portfolio3
         df_portfolios = analyze_all_portfolios(df, portfolio_allocations)
         df.rename(columns=asset_names_map, inplace=True)
 
-        # 📥 Téléchargements Excel & PDF
+        #Téléchargements Excel & PDF
         st.subheader("📥 Exporter les résultats")
         
-        # Excel multi-feuilles
+        # Excel pour exporter les datas
         excel_buffer = io.BytesIO()
         with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             df.to_excel(writer, sheet_name="Prix")
